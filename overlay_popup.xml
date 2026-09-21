@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:background="#212121"
+    android:padding="20dp"
+    android:elevation="12dp">
+
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="🎉 BACK IN STOCK!"
+        android:textColor="#4CAF50"
+        android:textSize="20sp"
+        android:textStyle="bold" />
+
+    <TextView android:id="@+id/overlayTitle"
+        android:layout_width="match_parent" android:layout_height="wrap_content"
+        android:text="Product title"
+        android:textColor="#FFFFFF"
+        android:textSize="15sp"
+        android:layout_marginTop="6dp"
+        android:maxLines="2"
+        android:ellipsize="end" />
+
+    <TextView android:id="@+id/overlayPrice"
+        android:layout_width="match_parent" android:layout_height="wrap_content"
+        android:text="₹0 - In Stock!"
+        android:textColor="#FFEB3B"
+        android:textSize="16sp"
+        android:textStyle="bold"
+        android:layout_marginTop="4dp" />
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:layout_marginTop="14dp">
+
+        <Button android:id="@+id/overlayOpenButton"
+            android:layout_width="0dp" android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="Open product" />
+
+        <Button android:id="@+id/overlayDismissButton"
+            android:layout_width="0dp" android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:layout_marginStart="8dp"
+            android:text="Dismiss" />
+    </LinearLayout>
+</LinearLayout>

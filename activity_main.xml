@@ -1,0 +1,101 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="20dp">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Amazon Stock Tracker"
+            android:textSize="22sp"
+            android:textStyle="bold"
+            android:layout_marginBottom="16dp" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="1. Grant permissions"
+            android:textStyle="bold"
+            android:layout_marginTop="8dp" />
+
+        <TextView android:id="@+id/statusNotification"
+            android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:text="Notifications: ❌ required" android:layout_marginTop="8dp" />
+        <Button android:id="@+id/btnNotificationPerm"
+            android:layout_width="wrap_content" android:layout_height="wrap_content"
+            android:text="Grant notification permission" />
+
+        <TextView android:id="@+id/statusOverlay"
+            android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:text="Draw over other apps: ❌ required" android:layout_marginTop="16dp" />
+        <Button android:id="@+id/btnOverlayPerm"
+            android:layout_width="wrap_content" android:layout_height="wrap_content"
+            android:text="Grant overlay permission" />
+
+        <TextView android:id="@+id/statusBattery"
+            android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:text="Battery optimization ignored: ❌ required" android:layout_marginTop="16dp" />
+        <Button android:id="@+id/btnBatteryPerm"
+            android:layout_width="wrap_content" android:layout_height="wrap_content"
+            android:text="Disable battery optimization" />
+
+        <TextView android:id="@+id/hintText"
+            android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:text="Grant all three above before starting - otherwise alerts may be delayed or silently dropped by the OS."
+            android:textStyle="italic"
+            android:layout_marginTop="12dp" />
+
+        <View android:layout_width="match_parent" android:layout_height="1dp"
+            android:background="#CCCCCC" android:layout_marginVertical="20dp" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="2. Configure product"
+            android:textStyle="bold" />
+
+        <EditText android:id="@+id/productUrlInput"
+            android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:hint="Amazon product URL"
+            android:layout_marginTop="8dp"
+            android:inputType="textUri" />
+
+        <EditText android:id="@+id/targetPriceInput"
+            android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:hint="Target price in ₹ (optional - leave blank for stock-only)"
+            android:layout_marginTop="8dp"
+            android:inputType="numberDecimal" />
+
+        <EditText android:id="@+id/intervalInput"
+            android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:hint="Check interval in seconds (min 10)"
+            android:text="15"
+            android:layout_marginTop="8dp"
+            android:inputType="number" />
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:layout_marginTop="20dp">
+
+            <Button android:id="@+id/btnStart"
+                android:layout_width="0dp" android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="Start tracking" />
+
+            <Button android:id="@+id/btnStop"
+                android:layout_width="0dp" android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:layout_marginStart="8dp"
+                android:text="Stop tracking" />
+        </LinearLayout>
+
+    </LinearLayout>
+</ScrollView>
