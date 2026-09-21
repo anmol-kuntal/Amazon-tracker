@@ -1,9 +1,14 @@
 name: Build APK
 
+# Builds a debug APK automatically every time you push to this repo.
+# No Android Studio needed - GitHub's servers do the compiling.
+# After it finishes: go to the Actions tab -> click the latest run ->
+# scroll to "Artifacts" -> download "app-debug".
+
 on:
   push:
     branches: [ "main", "master" ]
-  workflow_dispatch: {}
+  workflow_dispatch: {}   # lets you also trigger it manually from the Actions tab
 
 jobs:
   build:
