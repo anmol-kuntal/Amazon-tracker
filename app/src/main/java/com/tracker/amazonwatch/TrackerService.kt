@@ -62,7 +62,7 @@ class TrackerService : Service() {
         return START_STICKY
     }
 
-    private suspend fun pollLoop() {
+    private suspend fun CoroutineScope.pollLoop() {
         val url = prefs.productUrl
         val targetPrice = prefs.targetPrice
         var consecutiveErrors = 0
