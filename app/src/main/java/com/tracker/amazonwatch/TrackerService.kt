@@ -52,7 +52,6 @@ class TrackerService : Service() {
         var consecutiveErrors = 0
 
         while (isActive) {
-            val cycleStart = System.currentTimeMillis()
             try {
                 wakeLock?.acquire(20_000L)
                 val html = fetchPage(url)
@@ -85,11 +84,7 @@ class TrackerService : Service() {
                 wakeLock?.let { if (it.isHeld) it.release() }
             }
 
-            val elapsed = System.currentTimeMillis() - cycleStart
-            val base = prefs.intervalSeconds.coerceAtLeast(10) * 1000L
-            val jitter = (-2000..3000).random()
-            val remaining = (base - elapsed + jitter).coerceAtLeast(2000L)
-            delay(remaining)
+            delay(prefs.intervalSeconds * 1000L)
         }
     }
 
@@ -140,12 +135,6 @@ class TrackerService : Service() {
 
     private fun triggerAlert(result: ParseResult, productUrl: String) {
         showAlertNotification(result, productUrl)
-        val overlayIntent = Intent(this, OverlayPopupService::class.java).apply {
-            putExtra("title", result.title)
-            putExtra("price", result.price ?: -1.0)
-            putExtra("url", productUrl)
-        }
-        startService(overlayIntent)
     }
 
     private fun createNotificationChannels() {
@@ -161,8 +150,7 @@ class TrackerService : Service() {
             NotificationManager.IMPORTANCE_HIGH
         ).apply {
             description = "Fires the instant the product is in stock"
-            enableVibration(true)
-            vibrationPattern = longArrayOf(0, 400, 200, 400)
+            // Default sound + default vibration - no custom pattern, no overlay.
             setBypassDnd(true)
         }
 
@@ -201,7 +189,6 @@ class TrackerService : Service() {
             .setContentText("${result.title} $priceStr")
             .setSmallIcon(android.R.drawable.ic_menu_view)
             .setPriority(NotificationCompat.PRIORITY_HIGH)
-            .setCategory(NotificationCompat.CATEGORY_ALARM)
             .setContentIntent(pending)
             .setAutoCancel(true)
             .build()

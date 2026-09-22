@@ -13,21 +13,6 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import com.tracker.amazonwatch.databinding.ActivityMainBinding
 
-/**
- * Setup screen. Walks the user through the three permissions the tracker
- * needs to run reliably in the background and pop up a notification the
- * instant stock is detected:
- *
- *   1. POST_NOTIFICATIONS   -> required on Android 13+ to show any alert
- *   2. SYSTEM_ALERT_WINDOW  -> "draw over other apps", used for the
- *                              full-screen popup when stock is found
- *   3. Battery optimization exemption -> stops the OS from freezing the
- *                              background service to save power
- *
- * None of these can be granted purely in code - Android requires the user
- * to approve each one in a system settings screen, so this activity just
- * makes that flow as short as possible.
- */
 class MainActivity : AppCompatActivity() {
 
     private lateinit var binding: ActivityMainBinding
@@ -47,7 +32,6 @@ class MainActivity : AppCompatActivity() {
         setContentView(binding.root)
         prefs = TrackerPrefs(this)
 
-        // Pre-fill with values from the previous session, if any
         binding.productUrlInput.setText(prefs.productUrl)
         prefs.targetPrice?.let { binding.targetPriceInput.setText(it.toString()) }
         binding.intervalInput.setText(prefs.intervalSeconds.toString())
@@ -70,12 +54,10 @@ class MainActivity : AppCompatActivity() {
         binding.statusOverlay.text = "Draw over other apps: ${if (hasOverlayPermission()) "✅ granted" else "❌ required"}"
         binding.statusBattery.text = "Battery optimization ignored: ${if (hasBatteryExemption()) "✅ granted" else "❌ required"}"
 
-        val allGranted = hasNotificationPermission() && hasOverlayPermission() && hasBatteryExemption()
+        val allGranted = hasNotificationPermission() && hasBatteryExemption()
         binding.btnStart.isEnabled = allGranted
         binding.hintText.visibility = if (allGranted) android.view.View.GONE else android.view.View.VISIBLE
     }
-
-    // ---------------- Notification permission (Android 13+) ----------------
 
     private fun hasNotificationPermission(): Boolean {
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) return true
@@ -91,8 +73,6 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    // ---------------- Overlay / "draw over other apps" ----------------
-
     private fun hasOverlayPermission(): Boolean = Settings.canDrawOverlays(this)
 
     private fun requestOverlayPermission() {
@@ -105,8 +85,6 @@ class MainActivity : AppCompatActivity() {
             Toast.makeText(this, "Enable \"Allow display over other apps\" for this app, then come back", Toast.LENGTH_LONG).show()
         }
     }
-
-    // ---------------- Battery optimization exemption ----------------
 
     private fun hasBatteryExemption(): Boolean {
         val pm = getSystemService(Context.POWER_SERVICE) as PowerManager
@@ -122,9 +100,6 @@ class MainActivity : AppCompatActivity() {
                 )
                 startActivity(intent)
             } catch (e: Exception) {
-                // Some OEMs (Xiaomi/MIUI, Oppo/ColorOS, etc.) don't support this
-                // intent directly - send the user to the general battery settings
-                // screen instead.
                 startActivity(Intent(Settings.ACTION_IGNORE_BATTERY_OPTIMIZATION_SETTINGS))
                 Toast.makeText(
                     this,
@@ -134,8 +109,6 @@ class MainActivity : AppCompatActivity() {
             }
         }
     }
-
-    // ---------------- Start / stop the tracker ----------------
 
     private fun startTracking() {
         val url = binding.productUrlInput.text.toString().trim()
