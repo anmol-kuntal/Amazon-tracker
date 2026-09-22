@@ -68,6 +68,109 @@ class TrackerService : Service() {
         var consecutiveErrors = 0
 
         while (isActive) {
+            val cycleStart = System.currentTimeMillis()
+            try {
+                wakeLock?.acquire(20_000L) // safety timeout, auto-releases
+                val html = fetchPage(url)
+                val result = parseProduct(html)
+                consecutiveErrors = 0
+
+                updatePersistentNotification(result)
+
+                if (result.blocked) {
+                    updatePersistentNotification(result, extra = "Blocked by Amazon - backing off 5 min")
+                    delay(5 * 60_000L)
+                } else {
+                    val priceOk = targetPrice == null || (result.price != null && result.price <= targetPrice)
+                    val hit = result.inStock && priceOk
+
+                    if (hit && !prefs.lastKnownInStock) {
+                        triggerAlert(result, url)
+                        prefs.lastKnownInStock = true
+                    } else if (!hit) {
+                        prefs.lastKnownInStock = false
+                    }
+                }
+            } catch (e: Exception) {
+                consecutiveErrors++
+                updatePersistentNotification(
+                    ParseResult(title = "Error", inStock = false, price = null, blocked = false),
+                    extra = "Fetch error ($consecutiveErrors): ${e.message}"
+                )
+            } finally {
+                wakeLock?.let { if
+cat > app/src/main/java/com/tracker/amazonwatch/TrackerService.kt <<'EOF'
+package com.tracker.amazonwatch
+
+import android.app.Notification
+import android.app.NotificationChannel
+import android.app.NotificationManager
+import android.app.PendingIntent
+import android.app.Service
+import android.content.Intent
+import android.os.Build
+import android.os.IBinder
+import android.os.PowerManager
+import androidx.core.app.NotificationCompat
+import kotlinx.coroutines.*
+import okhttp3.OkHttpClient
+import okhttp3.Request
+import org.jsoup.Jsoup
+import java.util.concurrent.TimeUnit
+
+/**
+ * Runs continuously as a foreground service (Android requires the
+ * persistent notification below in exchange for letting a service run
+ * indefinitely - you can't hide it, that's the trade-off for reliability).
+ *
+ * Loop: fetch product page -> parse stock/price -> if it now matches your
+ * criteria and didn't before, fire an overlay popup + high-priority
+ * notification immediately.
+ */
+class TrackerService : Service() {
+
+    private val serviceScope = CoroutineScope(Dispatchers.IO + SupervisorJob())
+    private lateinit var prefs: TrackerPrefs
+    private var wakeLock: PowerManager.WakeLock? = null
+
+    private val client = OkHttpClient.Builder()
+        .connectTimeout(15, TimeUnit.SECONDS)
+        .readTimeout(15, TimeUnit.SECONDS)
+        .build()
+
+    private val userAgents = listOf(
+        "Mozilla/5.0 (Linux; Android 14; Pixel 8) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Mobile Safari/537.36",
+        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Safari/537.36",
+    )
+
+    override fun onCreate() {
+        super.onCreate()
+        prefs = TrackerPrefs(this)
+        createNotificationChannels()
+    }
+
+    override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
+        startForeground(NOTIF_ID_PERSISTENT, buildPersistentNotification("Starting…"))
+
+        // Partial wake lock keeps the CPU alive for the fetch even if the
+        // screen is off; released between cycles so it doesn't drain battery.
+        val pm = getSystemService(POWER_SERVICE) as PowerManager
+        wakeLock = pm.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, "AmazonTracker::poll")
+
+        serviceScope.launch { pollLoop() }
+
+        // START_STICKY: if the OS kills this service under memory pressure,
+        // it will attempt to recreate it automatically.
+        return START_STICKY
+    }
+
+    private suspend fun CoroutineScope.pollLoop() {
+        val url = prefs.productUrl
+        val targetPrice = prefs.targetPrice
+        var consecutiveErrors = 0
+
+        while (isActive) {
+            val cycleStart = System.currentTimeMillis()
             try {
                 wakeLock?.acquire(20_000L) // safety timeout, auto-releases
                 val html = fetchPage(url)
@@ -100,10 +203,16 @@ class TrackerService : Service() {
                 wakeLock?.let { if (it.isHeld) it.release() }
             }
 
-            // Jittered delay so requests aren't perfectly periodic
+            // Jittered delay so requests aren't perfectly periodic.
+            // The target interval covers the whole cycle (fetch + parse +
+            // sleep), so subtract however long the fetch/parse just took -
+            // otherwise a slow fetch silently stretches every cycle past
+            // what's configured.
+            val elapsed = System.currentTimeMillis() - cycleStart
             val base = prefs.intervalSeconds.coerceAtLeast(10) * 1000L
             val jitter = (-2000..3000).random()
-            delay((base + jitter).coerceAtLeast(5000L))
+            val remaining = (base - elapsed + jitter).coerceAtLeast(2000L)
+            delay(remaining)
         }
     }
 
